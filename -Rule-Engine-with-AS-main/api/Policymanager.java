@@ -1,71 +1,71 @@
 package com.yourname.ruleengine.api;
 
-import com.yourname.ruleengine.ast.Node;
-import com.yourname.ruleengine.data.Database;
+import com.yourname.ruleengine.ast.ExpressionNode;
+import com.yourname.ruleengine.data.RuleDatabase;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-public class RuleService {
-    private Database database;
+public class PolicyManager {
+    private RuleDatabase ruleDatabase;
 
-    public RuleService() {
-        this.database = new Database();
+    public PolicyManager() {
+        this.ruleDatabase = new RuleDatabase();
     }
 
-    public int createRule(String ruleString) {
-        return database.saveRule(ruleString);
+    public int addPolicy(String policyString) {
+        return ruleDatabase.storePolicy(policyString);
     }
 
-    public Node parseRule(String ruleString) {
-        Stack<Node> stack = new Stack<>();
-        String[] tokens = ruleString.split(" ");
-        for (String token : tokens) {
-            if (token.equals("AND") || token.equals("OR")) {
-                Node right = stack.pop();
-                Node left = stack.pop();
-                stack.push(new Node("operator", left, right, token));
+    public ExpressionNode analyzePolicy(String policyString) {
+        Stack<ExpressionNode> nodeStack = new Stack<>();
+        String[] elements = policyString.split(" ");
+        for (String element : elements) {
+            if (element.equals("AND") || element.equals("OR")) {
+                ExpressionNode rightNode = nodeStack.pop();
+                ExpressionNode leftNode = nodeStack.pop();
+                nodeStack.push(new ExpressionNode("operator", leftNode, rightNode, element));
             } else {
-                stack.push(new Node("operand", null, null, token));
+                nodeStack.push(new ExpressionNode("operand", null, null, element));
             }
         }
-        return stack.pop();
+        return nodeStack.pop();
     }
 
-    public Node combineRules(List<String> rules) {
-        Node combinedRoot = null;
-        for (String rule : rules) {
-            Node ruleNode = parseRule(rule);
-            if (combinedRoot == null) {
-                combinedRoot = ruleNode;
+    public ExpressionNode mergePolicies(List<String> policies) {
+        ExpressionNode mergedRoot = null;
+        for (String policy : policies) {
+            ExpressionNode policyNode = analyzePolicy(policy);
+            if (mergedRoot == null) {
+                mergedRoot = policyNode;
             } else {
-                combinedRoot = new Node("operator", combinedRoot, ruleNode, "AND");
+                mergedRoot = new ExpressionNode("operator", mergedRoot, policyNode, "AND");
             }
         }
-        return combinedRoot;
+        return mergedRoot;
     }
 
-    public boolean evaluateRule(Node ast, Map<String, Object> data) {
+    public boolean checkPolicy(ExpressionNode ast, Map<String, Object> context) {
         if (ast == null) {
             return false;
         }
         if (ast.getType().equals("operator")) {
             if (ast.getValue().equals("AND")) {
-                return evaluateRule(ast.getLeft(), data) && evaluateRule(ast.getRight(), data);
+                return checkPolicy(ast.getLeft(), context) && checkPolicy(ast.getRight(), context);
             } else if (ast.getValue().equals("OR")) {
-                return evaluateRule(ast.getLeft(), data) || evaluateRule(ast.getRight(), data);
+                return checkPolicy(ast.getLeft(), context) || checkPolicy(ast.getRight(), context);
             }
         } else if (ast.getType().equals("operand")) {
-            String[] condition = ast.getValue().split("=");
-            String attribute = condition[0].trim();
-            String value = condition[1].trim().replace("'", "");
-            return data.get(attribute).toString().equals(value);
+            String[] conditionParts = ast.getValue().split("=");
+            String attribute = conditionParts[0].trim();
+            String value = conditionParts[1].trim().replace("'", "");
+            return context.get(attribute).toString().equals(value);
         }
         return false;
     }
 
-    public Map<Integer, String> getAllRules() {
-        return database.getRules();
+    public Map<Integer, String> retrieveAllPolicies() {
+        return ruleDatabase.getPolicies();
     }
 }
