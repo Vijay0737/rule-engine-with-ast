@@ -1,70 +1,70 @@
 package com.yourname.ruleengine.ui;
 
-import com.yourname.ruleengine.api.RuleService;
-import com.yourname.ruleengine.ast.Node;
+import com.yourname.ruleengine.api.PolicyManager;
+import com.yourname.ruleengine.ast.ExpressionNode;
 
 import java.util.*;
 
-public class RuleEngineUI {
-    private RuleService ruleService;
+public class PolicyEngineInterface {
+    private PolicyManager policyManager;
 
-    public RuleEngineUI() {
-        this.ruleService = new RuleService();
+    public PolicyEngineInterface() {
+        this.policyManager = new PolicyManager();
     }
 
-    public void start() {
-        Scanner scanner = new Scanner(System.in);
+    public void launch() {
+        Scanner inputScanner = new Scanner(System.in);
         while (true) {
-            System.out.println("1. Create Rule");
-            System.out.println("2. Combine Rules");
-            System.out.println("3. Evaluate Rule");
-            System.out.println("4. View All Rules");
+            System.out.println("1. Create Policy");
+            System.out.println("2. Combine Policies");
+            System.out.println("3. Evaluate Policy");
+            System.out.println("4. View All Policies");
             System.out.println("5. Exit");
 
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // consume newline
+            int selection = inputScanner.nextInt();
+            inputScanner.nextLine(); // consume newline
 
-            switch (choice) {
+            switch (selection) {
                 case 1:
-                    System.out.println("Enter rule:");
-                    String rule = scanner.nextLine();
-                    int ruleId = ruleService.createRule(rule);
-                    System.out.println("Rule created with ID: " + ruleId);
+                    System.out.println("Enter policy:");
+                    String policy = inputScanner.nextLine();
+                    int policyId = policyManager.addPolicy(policy);
+                    System.out.println("Policy created with ID: " + policyId);
                     break;
                 case 2:
-                    System.out.println("Enter rule IDs to combine (comma-separated):");
-                    String ids = scanner.nextLine();
-                    List<String> rulesToCombine = new ArrayList<>();
+                    System.out.println("Enter policy IDs to combine (comma-separated):");
+                    String ids = inputScanner.nextLine();
+                    List<String> policiesToCombine = new ArrayList<>();
                     for (String id : ids.split(",")) {
-                        rulesToCombine.add(ruleService.getAllRules().get(Integer.parseInt(id.trim())));
+                        policiesToCombine.add(policyManager.retrievePolicies().get(Integer.parseInt(id.trim())));
                     }
-                    Node combinedRule = ruleService.combineRules(rulesToCombine);
-                    System.out.println("Combined Rule AST: " + combinedRule);
+                    ExpressionNode combinedPolicy = policyManager.mergePolicies(policiesToCombine);
+                    System.out.println("Combined Policy AST: " + combinedPolicy);
                     break;
                 case 3:
-                    System.out.println("Enter rule ID to evaluate:");
-                    int evalRuleId = scanner.nextInt();
-                    scanner.nextLine(); // consume newline
+                    System.out.println("Enter policy ID to evaluate:");
+                    int evalPolicyId = inputScanner.nextInt();
+                    inputScanner.nextLine(); // consume newline
                     System.out.println("Enter data (format: key=value, comma-separated):");
-                    String dataString = scanner.nextLine();
-                    Map<String, Object> data = new HashMap<>();
-                    for (String pair : dataString.split(",")) {
+                    String inputData = inputScanner.nextLine();
+                    Map<String, Object> context = new HashMap<>();
+                    for (String pair : inputData.split(",")) {
                         String[] keyValue = pair.split("=");
-                        data.put(keyValue[0].trim(), keyValue[1].trim());
+                        context.put(keyValue[0].trim(), keyValue[1].trim());
                     }
-                    Node ruleToEvaluate = ruleService.parseRule(ruleService.getAllRules().get(evalRuleId));
-                    boolean result = ruleService.evaluateRule(ruleToEvaluate, data);
-                    System.out.println("Evaluation Result: " + result);
+                    ExpressionNode policyToEvaluate = policyManager.analyzePolicy(policyManager.retrievePolicies().get(evalPolicyId));
+                    boolean evaluationResult = policyManager.checkPolicy(policyToEvaluate, context);
+                    System.out.println("Evaluation Result: " + evaluationResult);
                     break;
                 case 4:
-                    System.out.println("All Rules:");
-                    for (Map.Entry<Integer, String> entry : ruleService.getAllRules().entrySet()) {
-                        System.out.println("ID: " + entry.getKey() + ", Rule: " + entry.getValue());
+                    System.out.println("All Policies:");
+                    for (Map.Entry<Integer, String> entry : policyManager.retrievePolicies().entrySet()) {
+                        System.out.println("ID: " + entry.getKey() + ", Policy: " + entry.getValue());
                     }
                     break;
                 case 5:
                     System.out.println("Exiting...");
-                    scanner.close();
+                    inputScanner.close();
                     return;
                 default:
                     System.out.println("Invalid choice. Try again.");
@@ -73,7 +73,7 @@ public class RuleEngineUI {
     }
 
     public static void main(String[] args) {
-        RuleEngineUI ui = new RuleEngineUI();
-        ui.start();
+        PolicyEngineInterface interfaceInstance = new PolicyEngineInterface();
+        interfaceInstance.launch();
     }
 }
